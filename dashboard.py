@@ -1,12 +1,27 @@
 import streamlit as st
 st.set_page_config(page_title="hello-agent", layout="centered")
 st.title("🤖 hello-agent")
-st.caption("Pure Python Dashboard - Phase 10: Final | Router + RAG + MCP")
+st.caption("Pure Python Dashboard - Phase 10: Final | Router + RAG + MCP + Vector")
 
 from agent import ask_agent
-from rag import add_document, list_documents, add_document_chunks, collection
+from vector_db import collection, add_document, search_db
 import PyPDF2
 import shutil
+import os
+
+# helpers because vector_db doesn't have these
+def list_documents():
+    try:
+        data = collection.get()
+        ids = data.get("ids", [])
+        # ids are like "policy_0", return base names
+        return [i.rsplit("_",1)[0] for i in ids]
+    except:
+        return []
+
+def add_document_chunks(text, doc_id, chunk_size=800):
+    # vector_db.add_document already chunks internally
+    return add_document(text, doc_id)
 
 # ==========================================
 # SIDEBAR 1: Quick Buttons
@@ -28,18 +43,21 @@ use_ai_router = st.sidebar.checkbox("Use AI Router", value=False)
 st.sidebar.caption(f"Mode: {'AI Router' if use_ai_router else 'Keyword Router'}")
 
 # ==========================================
-# SIDEBAR 3: Brain Status (NEW - Phase 10)
+# SIDEBAR 3: Brain Status
 # ==========================================
 st.sidebar.divider()
 st.sidebar.title("🧠 Brain Status")
-count = collection.count()
-st.sidebar.metric("Total Chunks/Docs in Memory", count)
+try:
+    count = collection.count()
+except:
+    count = 0
+st.sidebar.metric("Total Chunks in Memory", count)
 
 docs = list_documents()
 st.sidebar.write(f"Knows {len(set(docs))} files:")
 st.sidebar.code("\n".join(set(docs)) if docs else "No docs yet")
 
-if st.sidebar.button("🗑️ Clear Brain"):
+if st.sidebar.button("🗑 Clear Brain"):
     shutil.rmtree("./chroma_db", ignore_errors=True)
     st.sidebar.success("Brain cleared! Restart app.")
     st.rerun()
@@ -67,12 +85,8 @@ if uploaded_file is not None:
     st.sidebar.caption(f"Size: {len(doc_text)} chars")
 
     if st.sidebar.button(f"Learn {doc_id}"):
-        if len(doc_text) > 1000:
-            num_chunks = add_document_chunks(doc_text, doc_id, chunk_size=800)
-            st.sidebar.success(f"Learned {doc_id} as {num_chunks} chunks!")
-        else:
-            add_document(doc_text, doc_id)
-            st.sidebar.success(f"Learned: {doc_id}")
+        num_chunks = add_document(doc_text, doc_id)
+        st.sidebar.success(f"Learned {doc_id} as {num_chunks} chunks!")
         st.rerun()
 
 # ==========================================
@@ -103,5 +117,5 @@ if st.button("Send") and question:
         st.success(result['answer'])
         with st.expander("Show Context used"):
             st.write(result['context'])
-    
+
     st.session_state["q"] = ""

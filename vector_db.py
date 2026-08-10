@@ -4,6 +4,7 @@
 import os
 import chromadb
 from chromadb.utils import embedding_functions
+import streamlit as st
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "chroma_db")
@@ -29,6 +30,19 @@ collection = client.get_or_create_collection(
     name="docs",
     embedding_function=emb_fn
 )
+
+@st.cache_resource
+def load_model():
+    import chromadb
+    from chromadb.utils import embedding_functions
+    emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name="all-MiniLM-L6-v2"
+    )
+    client = chromadb.PersistentClient(path=DB_PATH)
+    col = client.get_or_create_collection(name="docs", embedding_function=emb_fn)
+    return col
+
+collection = load_model()
 
 
 # ============================================================
