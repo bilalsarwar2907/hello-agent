@@ -1,0 +1,11 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+groq
+sentence-transformers
+chromadb
+fastapi
+uvicorn
+streamlit
+PyPDF2
+fastmcp
+python-dotenv
