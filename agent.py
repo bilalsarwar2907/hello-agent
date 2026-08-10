@@ -7,6 +7,7 @@ from rag import search
 from tools.calculator import get_refund_policy, get_mission_statement, get_privacy_policy
 from memory import add_memory, get_memory
 from logger import log_chat
+from vector_db import search_db as search
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -14,7 +15,7 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(BASE_DIR, "prompts", "system.txt"), "r", encoding="utf-8") as f:
     SYSTEM_TEMPLATE = f.read()
-    
+
 def ask_agent(question: str, use_ai_router: bool = False) -> dict:
     q_lower = question.lower()
     if "ignore previous" in q_lower or "ceo phone" in q_lower:
